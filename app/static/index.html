@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Blog Generator </title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+
+
+    <style>
+
+        :root {
+        --primary-color: #4F46E5;
+        --primary-hover: #4338CA;
+        --bg-color: #F3F4F6;
+        --card-bg: #FFFFFF;
+        --text-main: #111827;
+        --text-muted: #6B7280;
+        --border-color: #E5E7EB;
+        --error-color: #EF4444;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Inter', sans-serif;
+    }
+
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        line-height: 1.6;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 2rem 1rem;
+    }
+
+    .container {
+        max-width: 800px;
+        width: 100%;
+    }
+
+    header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        letter-spacing: -0.025em;
+    }
+
+    .subtitle {
+        color: var(--text-muted);
+        font-size: 1.1rem;
+        margin-top: 0.5rem;
+    }
+
+    .card {
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-bottom: 2rem;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    input[type="url"] {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    input[type="url"]:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 160px;
+    }
+
+    button:hover {
+        background-color: var(--primary-hover);
+    }
+
+    button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    /* Spinner Animation */
+    .spinner {
+        border: 3px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top: 3px solid white;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .error {
+        color: var(--error-color);
+        background-color: #FEE2E2;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .result-container {
+        margin-top: 2rem;
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-container h2 {
+        font-size: 1.8rem;
+        color: var(--text-main);
+        margin-bottom: 1rem;
+    }
+
+    .divider {
+        height: 1px;
+        background-color: var(--border-color);
+        margin: 1.5rem 0;
+    }
+
+    /* Markdown styling inside the content div */
+    .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+    .markdown-body p {
+        margin-bottom: 1rem;
+        color: #374151;
+    }
+    .markdown-body ul, .markdown-body ol {
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+    }
+    .markdown-body strong {
+        color: var(--text-main);
+    }
+
+    /* Documentation Styles */
+    .documentation-section h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 0.5rem;
+    }
+
+    .doc-content h3 {
+        font-size: 1.1rem;
+        margin: 1.5rem 0 0.5rem 0;
+        color: var(--primary-color);
+    }
+
+    pre {
+        background-color: #1F2937;
+        color: #E5E7EB;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 0.9rem;
+    }
+
+    footer {
+        text-align: center;
+        margin-top: 3rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    footer strong {
+        color: var(--primary-color);
+    }
+
+    @media (max-width: 600px) {
+        .input-group {
+            flex-direction: column;
+        }
+        button {
+            width: 100%;
+        }
+    }
+</style>
+
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Blog Generator</h1>
+            <p class="subtitle">Transform any YouTube video into a fully formatted blog post instantly.</p>
+        </header>
+
+        <main>
+            <section class="card generator-section">
+                <form id="blog-form">
+                    <div class="input-group">
+                        <input type="url" id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." required>
+                        <button type="submit" id="generate-btn">
+                            <span class="btn-text">Generate Blog</span>
+                            <div class="spinner hidden" id="loading-spinner"></div>
+                        </button>
+                    </div>
+                </form>
+
+                <div id="error-message" class="error hidden"></div>
+
+                <div id="result-container" class="result-container hidden">
+                    <h2 id="blog-title"></h2>
+                    <div class="divider"></div>
+                    <div id="blog-content" class="markdown-body"></div>
+                </div>
+            </section>
+
+            <section class="card documentation-section">
+                <h2>API Documentation</h2>
+                <div class="doc-content">
+                    <h3>Endpoint</h3>
+                    <p><code>POST /generate-blog</code></p>
+                    
+                    <h3>Description</h3>
+                    <p>Accepts a YouTube URL and processes it through an AI workflow graph to generate a cohesive blog title and formatted content.</p>
+                    
+                    <h3>Request Body (JSON)</h3>
+                    <pre><code>{
+  "youtube_url": "string (Valid YouTube URL)"
+}</code></pre>
+
+                    <h3>Response (JSON)</h3>
+                    <pre><code>{
+  "title": "string",
+  "content": "string (Markdown formatted)"
+}</code></pre>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Designed and Created by <strong>Mohd. Musheer</strong> &copy; 2026</p>
+        </footer>
+    </div>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('blog-form');
+            const urlInput = document.getElementById('youtube-url');
+            const generateBtn = document.getElementById('generate-btn');
+            const btnText = document.querySelector('.btn-text');
+            const spinner = document.getElementById('loading-spinner');
+            
+            const resultContainer = document.getElementById('result-container');
+            const blogTitle = document.getElementById('blog-title');
+            const blogContent = document.getElementById('blog-content');
+            const errorMessage = document.getElementById('error-message');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const url = urlInput.value.trim();
+                if (!url) return;
+
+                // Reset UI States
+                errorMessage.classList.add('hidden');
+                resultContainer.classList.add('hidden');
+                
+                // Set Loading State
+                generateBtn.disabled = true;
+                btnText.classList.add('hidden');
+                spinner.classList.remove('hidden');
+
+                try {
+                    // Call the FastAPI backend
+                    const response = await fetch('/generate-blog', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ youtube_url: url })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    // Populate Data
+                    blogTitle.textContent = data.title;
+                    
+                    // Parse Markdown content to HTML using Marked.js
+                    blogContent.innerHTML = marked.parse(data.content);
+
+                    // Show Result
+                    resultContainer.classList.remove('hidden');
+
+                } catch (error) {
+                    errorMessage.textContent = "Failed to generate blog. Please check the URL and try again.";
+                    errorMessage.classList.remove('hidden');
+                    console.error("Error:", error);
+                } finally {
+                    // Remove Loading State
+                    generateBtn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    spinner.classList.add('hidden');
+                }
+            });
+        });
+
+
+    </script>
+</body>
+</html>
