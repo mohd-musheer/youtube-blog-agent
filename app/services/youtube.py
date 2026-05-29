@@ -1,10 +1,9 @@
 from yt_dlp import YoutubeDL
-from yt_dlp import YoutubeDL
 from urllib.parse import urlparse, parse_qs
+from youtube_transcript_api import YouTubeTranscriptApi
 
 from app.schemas.state import BlogState
 
-from youtube_transcript_api import YouTubeTranscriptApi
 
 def extract_youtube_data(state: BlogState):
     """
@@ -12,55 +11,127 @@ def extract_youtube_data(state: BlogState):
     - title
     - description
     - transcript
+
+    Works even if:
+    - yt-dlp metadata extraction fails
+    - transcript is unavailable
     """
 
-    # -------- Extract Metadata --------
+    title = ""
+    description = ""
 
-    with YoutubeDL({}) as ydl:
-        info = ydl.extract_info(state['youtube_url'], download=False)
-
-    title = info.get("title", "")
-    description = info.get("description", "")
-
-    # -------- Extract Video ID --------
-
-
-    parsed_url = urlparse(state['youtube_url'])
-
-    if parsed_url.hostname in ["www.youtube.com", "youtube.com"]:
-        video_id = parse_qs(parsed_url.query).get("v", [None])[0]
-
-    if parsed_url.hostname == "youtu.be":
-        video_id = parsed_url.path[1:]
-
-    if not video_id:
-        return "Invalid YouTube URL"
-
-    # -------- Get Transcript --------
+    # ---------- Extract Metadata ----------
 
     try:
+
+        with YoutubeDL({}) as ydl:
+            info = ydl.extract_info(
+                state["youtube_url"],
+                download=False
+            )
+
+        title = info.get("title", "")
+        description = info.get("description", "")
+
+    except Exception as e:
+
+        print(
+            f"Metadata extraction failed: {e}"
+        )
+
+        title = ""
+        description = ""
+
+    # ---------- Extract Video ID ----------
+
+    video_id = None
+
+    try:
+
+        parsed_url = urlparse(
+            state["youtube_url"]
+        )
+
+        if parsed_url.hostname in [
+            "www.youtube.com",
+            "youtube.com"
+        ]:
+
+            video_id = parse_qs(
+                parsed_url.query
+            ).get("v", [None])[0]
+
+        elif parsed_url.hostname == "youtu.be":
+
+            video_id = parsed_url.path[1:]
+
+    except Exception as e:
+
+        print(
+            f"Video ID extraction failed: {e}"
+        )
+
+    if not video_id:
+
+        return {
+            "raw_metadata":
+            """
+            TITLE:
+
+            DESCRIPTION:
+
+            TRANSCRIPT:
+            Invalid YouTube URL
+            """
+        }
+
+    # ---------- Extract Transcript ----------
+
+    transcript_text = ""
+
+    try:
+
         api = YouTubeTranscriptApi()
 
         transcript = api.fetch(video_id)
 
-        transcript_text = " ".join([x.text for x in transcript])
+        transcript_text = " ".join(
+            [item.text for item in transcript]
+        )
 
     except Exception as e:
 
-        transcript_text = f"Transcript not available: {str(e)}"
+        print(
+            f"Transcript extraction failed: {e}"
+        )
 
-    # -------- Final Combined Output --------
+        transcript_text = ""
+
+    # ---------- Fallback Handling ----------
+
+    if not title:
+        title = "Title Not Available"
+
+    if not description:
+        description = "Description Not Available"
+
+    if not transcript_text:
+        transcript_text = (
+            "Transcript Not Available"
+        )
+
+    # ---------- Final Combined Text ----------
 
     final_text = f"""
-        TITLE:
-        {title}
+TITLE:
+{title}
 
-        DESCRIPTION:
-        {description}
+DESCRIPTION:
+{description}
 
-        TRANSCRIPT:
-        {transcript_text}
-        """
+TRANSCRIPT:
+{transcript_text}
+"""
 
     return {
         "raw_metadata": final_text
